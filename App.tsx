@@ -25,7 +25,7 @@ export default function App() {
   const [tabBarVisible, setTabBarVisible] = useState(true);
 
   useEffect(() => {
-    syncPool(); // 后台同步远程文章池，不阻塞 UI
+    syncPool();
     requestPermissions().then((granted) => {
       if (granted) {
         scheduleReadingReminder();
@@ -54,7 +54,7 @@ export default function App() {
         >
           <Icon
             name="schedule"
-            size={22}
+            size={20}
             color={page === 'timetable' ? '#FF6B35' : '#B2BEC3'}
           />
           <Text style={[styles.tabLabel, page === 'timetable' && styles.tabLabelActive]}>
@@ -69,7 +69,7 @@ export default function App() {
         >
           <Icon
             name="tasks"
-            size={22}
+            size={20}
             color={page === 'schedule' ? '#FF6B35' : '#B2BEC3'}
           />
           <Text style={[styles.tabLabel, page === 'schedule' && styles.tabLabelActive]}>
@@ -84,7 +84,7 @@ export default function App() {
         >
           <Icon
             name="reader"
-            size={22}
+            size={20}
             color={page === 'reading' ? '#FF6B35' : '#B2BEC3'}
           />
           <Text style={[styles.tabLabel, page === 'reading' && styles.tabLabelActive]}>
@@ -99,7 +99,7 @@ export default function App() {
         >
           <Icon
             name="more"
-            size={22}
+            size={20}
             color={page === 'more' ? '#FF6B35' : '#B2BEC3'}
           />
           <Text style={[styles.tabLabel, page === 'more' && styles.tabLabelActive]}>
@@ -122,15 +122,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#FFD1BA',
-    paddingBottom: 28,
-    paddingTop: 8,
-    paddingHorizontal: 16,
+    paddingBottom: 22,
+    paddingTop: 6,
+    paddingHorizontal: 12,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   tabActive: {
     backgroundColor: '#FFF1EB',
@@ -145,3 +145,4 @@ const styles = StyleSheet.create({
     color: '#FF6B35',
   },
 });
+

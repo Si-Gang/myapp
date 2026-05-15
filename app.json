@@ -42,6 +42,12 @@
         "projectId": "f624ea24-358d-4cc2-a955-04d4dfbd527f"
       }
     },
-    "owner": "sigang"
+    "owner": "sigang",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f624ea24-358d-4cc2-a955-04d4dfbd527f"
+    }
   }
 }

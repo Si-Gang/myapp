@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Course } from '../types';
 import { loadCourses, saveCourses } from '../store-timetable';
 import { assignColor, TOTAL_WEEKS } from '../utils/timetable';
+import { getCurrentWeek, resetSemesterToNow } from '../utils/semester';
 import TimetableGrid from '../components/TimetableGrid';
 import CourseModal from '../components/CourseModal';
 import BatchImportModal from '../components/BatchImportModal';
@@ -14,9 +15,41 @@ export default function TimetableScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
+  const [overflow, setOverflow] = useState(false);
+  const weekScrollRef = useRef<ScrollView>(null);
+  const { width: screenWidth } = useWindowDimensions();
+
+  const scrollToWeek = (w: number) => {
+    const chipWidth = 30;
+    const gap = 4;
+    const paddingLeft = 16;
+    const chipCenter = paddingLeft + (w - 1) * (chipWidth + gap) + chipWidth / 2;
+    const offset = Math.max(0, chipCenter - screenWidth / 2);
+    weekScrollRef.current?.scrollTo({ x: offset, animated: true });
+  };
 
   useEffect(() => {
     loadCourses().then(setCourses);
+    getCurrentWeek().then(({ week, overflow: isOverflow }) => {
+      if (isOverflow) {
+        setOverflow(true);
+        setSelectedWeek(TOTAL_WEEKS);
+        scrollToWeek(TOTAL_WEEKS);
+      } else {
+        setSelectedWeek(week);
+        scrollToWeek(week);
+      }
+    });
+  }, []);
+
+  const handleReset = useCallback(() => {
+    saveCourses([]);
+    setCourses([]);
+    resetSemesterToNow().then(() => {
+      setOverflow(false);
+      setSelectedWeek(1);
+      scrollToWeek(1);
+    });
   }, []);
 
   const persist = useCallback((list: Course[]) => {
@@ -90,6 +123,14 @@ export default function TimetableScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>课程表</Text>
         <View style={styles.headerActions}>
+          {overflow && (
+            <TouchableOpacity
+              style={styles.resetBtn}
+              onPress={handleReset}
+            >
+              <Text style={styles.resetBtnText}>重置课表</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.batchBtn}
             onPress={() => setShowBatch(true)}
@@ -102,6 +143,7 @@ export default function TimetableScreen() {
       {/* Week selector */}
       <View style={styles.weekBar}>
         <ScrollView
+          ref={weekScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.weekContent}
@@ -139,7 +181,7 @@ export default function TimetableScreen() {
         activeOpacity={0.8}
         onPress={() => setShowAdd(true)}
       >
-        <Icon name="plus" size={24} color="#fff" />
+        <Icon name="plus" size={22} color="#fff" />
       </TouchableOpacity>
 
       <CourseModal
@@ -179,20 +221,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8F5',
   },
   header: {
-    paddingTop: 56,
-    paddingBottom: 12,
+    paddingTop: 48,
+    paddingBottom: 10,
     paddingHorizontal: 20,
     backgroundColor: '#FF6B35',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 1,
@@ -201,16 +243,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   batchBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 14,
   },
   batchBtnText: {
-    fontSize: 13,
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  resetBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  resetBtnText: {
+    fontSize: 12,
     color: '#fff',
     fontWeight: '600',
   },
@@ -218,16 +273,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#FFD1BA',
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   weekContent: {
     paddingHorizontal: 16,
-    gap: 6,
+    gap: 4,
   },
   weekChip: {
-    width: 34,
-    height: 30,
-    borderRadius: 15,
+    width: 30,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#F0F0F0',
     alignItems: 'center',
     justifyContent: 'center',
@@ -236,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B35',
   },
   weekChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#636E72',
   },
@@ -245,18 +300,18 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    right: 16,
+    bottom: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FF6B35',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 6,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
 });

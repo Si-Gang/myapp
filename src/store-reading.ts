@@ -757,20 +757,71 @@ Code Review 不是上级对下级的检查，而是同事之间的平等对话�
 // ── 远程同步 ──
 
 const POOL_CACHE_KEY = '@articles_pool_v1';
-// 把文章池 JSON 托管到 GitHub，用 raw URL；留空则只用本地种子库
-const REMOTE_POOL_URL = '';
+const LAST_SYNC_KEY = '@articles_last_sync';
+const SYNC_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小时内不重复抓取
 
-/** 从远程拉取文章池并缓存到本地。返回新增数量。 */
-export async function syncPool(): Promise<number> {
-  if (!REMOTE_POOL_URL) return 0;
+// 把文章池 JSON 托管到 GitHub，用 raw URL；留空则只用本地种子库
+const REMOTE_POOL_URL = 'https://raw.githubusercontent.com/Si-Gang/myapp/refs/heads/main/articles.json';
+
+export type SyncResult = {
+  ok: boolean;
+  count: number;      // 下载到的文章数
+  totalPool: number;  // 合并后总池大小
+  error?: string;
+};
+
+const FETCH_TIMEOUT_MS = 10000;
+
+/** 从远程拉取文章池并缓存到本地。同一天内不重复抓取。 */
+export async function syncPool(): Promise<SyncResult> {
+  if (!REMOTE_POOL_URL) {
+    console.log('[syncPool] REMOTE_POOL_URL 为空，跳过同步');
+    const pool = await getPool();
+    return { ok: true, count: 0, totalPool: pool.length };
+  }
+
+  // 24 小时内不重复抓取
   try {
-    const res = await fetch(REMOTE_POOL_URL, { cache: 'no-cache' });
-    if (!res.ok) return 0;
+    const last = await AsyncStorage.getItem(LAST_SYNC_KEY);
+    if (last) {
+      const elapsed = Date.now() - parseInt(last, 10);
+      if (elapsed < SYNC_COOLDOWN_MS) {
+        console.log('[syncPool] 距上次同步不足24小时，跳过');
+        const pool = await getPool();
+        return { ok: true, count: 0, totalPool: pool.length };
+      }
+    }
+  } catch {}
+
+  try {
+    console.log('[syncPool] 开始拉取:', REMOTE_POOL_URL);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(REMOTE_POOL_URL, {
+      cache: 'no-cache',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const msg = `HTTP ${res.status} ${res.statusText}`;
+      console.log('[syncPool] 请求失败:', msg);
+      const pool = await getPool();
+      return { ok: false, count: 0, totalPool: pool.length, error: msg };
+    }
     const remoteArticles: Article[] = await res.json();
+    console.log('[syncPool] 下载成功, 文章数:', remoteArticles.length);
     await AsyncStorage.setItem(POOL_CACHE_KEY, JSON.stringify(remoteArticles));
-    return remoteArticles.length;
-  } catch {
-    return 0;
+    await AsyncStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
+    const pool = await getPool();
+    console.log('[syncPool] 合并后总池:', pool.length, '篇');
+    return { ok: true, count: remoteArticles.length, totalPool: pool.length };
+  } catch (e: any) {
+    const msg = e?.name === 'AbortError'
+      ? `请求超时（${FETCH_TIMEOUT_MS / 1000}秒）`
+      : e?.message ?? String(e);
+    console.log('[syncPool] 异常:', msg);
+    const pool = await getPool();
+    return { ok: false, count: 0, totalPool: pool.length, error: msg };
   }
 }
 

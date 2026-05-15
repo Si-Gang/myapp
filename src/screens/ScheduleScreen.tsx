@@ -120,7 +120,7 @@ export default function ScheduleScreen() {
         activeOpacity={0.8}
         onPress={() => setShowAdd(true)}
       >
-        <Icon name="plus" size={24} color="#fff" />
+        <Icon name="plus" size={22} color="#fff" />
       </TouchableOpacity>
 
       <AddModal
@@ -183,20 +183,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8F5',
   },
   header: {
-    paddingTop: 56,
-    paddingBottom: 16,
+    paddingTop: 48,
+    paddingBottom: 10,
     paddingHorizontal: 20,
     backgroundColor: '#FF6B35',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 1,
@@ -205,15 +205,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   headerCount: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
   },
   cleanupBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 4,
+    paddingVertical: 3,
     paddingHorizontal: 10,
     borderRadius: 12,
   },
@@ -282,19 +282,19 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    right: 16,
+    bottom: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FF6B35',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 6,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
 
 });
