@@ -14,7 +14,8 @@
           "icon": "./assets/icon.png",
           "color": "#FF6B35"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -38,7 +39,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "b4777597-cdc9-4517-b89a-94462fad503d"
+        "projectId": "f624ea24-358d-4cc2-a955-04d4dfbd527f"
       }
     },
     "owner": "sigang"

@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Article } from '../types';
-import { loadArticles, saveArticles } from '../store-reading';
+import { loadArticles, refillAfterCleanup } from '../store-reading';
 import ReaderView from '../components/ReaderView';
 
 interface Props {
@@ -55,8 +55,10 @@ export default function ReadingListScreen({ onReaderOpen }: Props) {
         (now - new Date(a.publishedAt).getTime()) <= 7 * DAY_MS &&
         !readIds.has(a.id)
     );
-    setArticles(remaining);
-    saveArticles(remaining);
+    const removedIds = articles
+      .filter((a) => !remaining.includes(a))
+      .map((a) => a.id);
+    refillAfterCleanup(remaining, removedIds).then(setArticles);
     setShowCleanup(false);
   }, [articles, readIds]);
 

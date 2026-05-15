@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Schedule } from './types';
+import { loadArticles } from './store-reading';
 
 export function setupNotificationHandler() {
   Notifications.setNotificationHandler({
@@ -15,9 +16,6 @@ export function setupNotificationHandler() {
 }
 
 export async function requestPermissions(): Promise<boolean> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
@@ -31,21 +29,33 @@ async function ensureChannel() {
   }
 }
 
-export async function scheduleReadingReminder() {
-  await Notifications.cancelScheduledNotificationAsync('reading-reminder');
+const READING_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
-  await Notifications.scheduleNotificationAsync({
-    identifier: 'reading-reminder',
-    content: {
-      title: '📖 阅读推送',
-      body: '打开看看今天有什么好文章吧',
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: 19,
-      minute: 55,
-    },
-  });
+export async function scheduleReadingReminder() {
+  const articles = await loadArticles();
+  if (articles.length === 0) return;
+
+  // Cancel all existing reading reminders
+  for (const h of READING_HOURS) {
+    await Notifications.cancelScheduledNotificationAsync(`reading-${h}`);
+  }
+
+  // Schedule one per hour, cycling through articles if needed
+  for (let i = 0; i < READING_HOURS.length; i++) {
+    const article = articles[i % articles.length];
+    await Notifications.scheduleNotificationAsync({
+      identifier: `reading-${READING_HOURS[i]}`,
+      content: {
+        title: `📖 ${article.title}`,
+        body: article.excerpt,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: READING_HOURS[i],
+        minute: 0,
+      },
+    });
+  }
 }
 
 export async function scheduleDeadlineReminders(schedules: Schedule[]) {

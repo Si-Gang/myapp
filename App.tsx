@@ -8,9 +8,12 @@ import ReadingListScreen from './src/screens/ReadingListScreen';
 import MoreScreen from './src/screens/MoreScreen';
 import Icon from './src/components/Icon';
 import { loadSchedules } from './src/store';
+import { syncPool } from './src/store-reading';
 import {
   setupNotificationHandler,
-  initializeNotifications,
+  scheduleReadingReminder,
+  scheduleDeadlineReminders,
+  requestPermissions,
 } from './src/notifications';
 
 type Page = 'timetable' | 'schedule' | 'reading' | 'more';
@@ -22,7 +25,13 @@ export default function App() {
   const [tabBarVisible, setTabBarVisible] = useState(true);
 
   useEffect(() => {
-    loadSchedules().then((s) => initializeNotifications(s));
+    syncPool(); // 后台同步远程文章池，不阻塞 UI
+    requestPermissions().then((granted) => {
+      if (granted) {
+        scheduleReadingReminder();
+        loadSchedules().then((s) => scheduleDeadlineReminders(s));
+      }
+    });
   }, []);
 
   return (
